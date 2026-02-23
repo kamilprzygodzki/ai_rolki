@@ -24,11 +24,26 @@ export interface ReelSuggestion {
   hashtags: string[];
 }
 
+export interface TitleSuggestion {
+  title: string;
+  style: string;
+  why: string;
+}
+
+export interface ThumbnailSuggestion {
+  concept: string;
+  text_overlay: string;
+  style: string;
+  reference: string;
+}
+
 export interface AnalysisResult {
   summary: string;
   reels: ReelSuggestion[];
   hooks: string[];
   structure_notes: string;
+  titles: TitleSuggestion[];
+  thumbnails: ThumbnailSuggestion[];
 }
 
 export type SessionStatus =

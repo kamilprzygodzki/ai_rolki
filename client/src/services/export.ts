@@ -63,6 +63,27 @@ export function exportPDF(analysis: AnalysisResult, filename: string): void {
     y += 4;
   }
 
+  if (analysis.titles?.length) {
+    addText('Propozycje tytulow', 14, true);
+    analysis.titles.forEach((t, i) => {
+      addText(`${i + 1}. ${t.title}`, 11, true);
+      addText(`   Styl: ${t.style}`, 10);
+      addText(`   Dlaczego: ${t.why}`, 10);
+    });
+    y += 4;
+  }
+
+  if (analysis.thumbnails?.length) {
+    addText('Koncepcje miniatur', 14, true);
+    analysis.thumbnails.forEach((th, i) => {
+      addText(`${i + 1}. ${th.concept}`, 11, true);
+      addText(`   Tekst overlay: ${th.text_overlay}`, 10);
+      addText(`   Styl: ${th.style}`, 10);
+      addText(`   Inspiracja: ${th.reference}`, 10);
+    });
+    y += 4;
+  }
+
   if (analysis.hooks?.length) {
     addText('Propozycje hookow', 14, true);
     analysis.hooks.forEach((hook, i) => addText(`${i + 1}. ${hook}`, 10));

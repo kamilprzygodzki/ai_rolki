@@ -193,5 +193,11 @@ export async function analyzeTranscript(
   const prompt = buildAnalysisPrompt(fullText, transcript.duration);
   const raw = await callWithRetry(client, model, prompt);
   logger.info(`Parsing response (${raw.length} chars)`);
-  return parseAnalysisJSON(raw);
+  const result = parseAnalysisJSON(raw);
+
+  // Ensure new fields have fallback defaults
+  result.titles = result.titles || [];
+  result.thumbnails = result.thumbnails || [];
+
+  return result;
 }

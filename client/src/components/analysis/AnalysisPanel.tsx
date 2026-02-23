@@ -2,6 +2,8 @@ import { Sparkles } from 'lucide-react';
 import { AnalysisResult } from '../../types';
 import { ReelCard } from './ReelCard';
 import { HookCard } from './HookCard';
+import { TitleCard } from './TitleCard';
+import { ThumbnailCard } from './ThumbnailCard';
 import { StructureBreakdown } from './StructureBreakdown';
 
 interface AnalysisPanelProps {
@@ -20,6 +22,12 @@ export function AnalysisPanel({ analysis, onSeek }: AnalysisPanelProps) {
         </div>
         <p className="text-sm text-dark-300 leading-relaxed">{analysis.summary}</p>
       </div>
+
+      {/* Titles */}
+      <TitleCard titles={analysis.titles} />
+
+      {/* Thumbnails */}
+      <ThumbnailCard thumbnails={analysis.thumbnails} />
 
       {/* Reels */}
       {analysis.reels.length > 0 && (

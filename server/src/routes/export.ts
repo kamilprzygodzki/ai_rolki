@@ -71,6 +71,28 @@ function buildMarkdown(session: any): string {
     md += `\n`;
   }
 
+  if (analysis.titles?.length) {
+    md += `## Propozycje tytułów\n\n`;
+    analysis.titles.forEach((t: any, i: number) => {
+      md += `${i + 1}. **${t.title}**\n`;
+      md += `   - Styl: ${t.style}\n`;
+      md += `   - Dlaczego: ${t.why}\n`;
+    });
+    md += `\n`;
+  }
+
+  if (analysis.thumbnails?.length) {
+    md += `## Koncepcje miniatur\n\n`;
+    analysis.thumbnails.forEach((th: any, i: number) => {
+      md += `### Miniatura ${i + 1}\n\n`;
+      md += `- **Koncept:** ${th.concept}\n`;
+      md += `- **Tekst overlay:** ${th.text_overlay}\n`;
+      md += `- **Styl:** ${th.style}\n`;
+      md += `- **Inspiracja:** ${th.reference}\n`;
+      md += `\n`;
+    });
+  }
+
   if (analysis.hooks?.length) {
     md += `## Hooki\n\n`;
     analysis.hooks.forEach((hook: string, i: number) => {
