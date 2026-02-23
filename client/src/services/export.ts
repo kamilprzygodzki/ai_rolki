@@ -44,25 +44,6 @@ export function exportPDF(analysis: AnalysisResult, filename: string): void {
   addText(analysis.summary, 10);
   y += 4;
 
-  addText('Propozycje rolek', 14, true);
-  for (const reel of analysis.reels) {
-    addText(`${reel.title} [${reel.priority.toUpperCase()}]`, 12, true);
-    addText(`Czas: ${reel.start} - ${reel.end} (${reel.duration})`, 10);
-    addText(`Hook: ${reel.hook}`, 10);
-    addText(`Dlaczego: ${reel.why}`, 10);
-    addText(`Zarys: ${reel.script_outline}`, 10);
-
-    if (reel.editing_tips?.length) {
-      addText('Tipy montazowe:', 10, true);
-      reel.editing_tips.forEach((tip) => addText(`  - ${tip}`, 10));
-    }
-
-    if (reel.hashtags?.length) {
-      addText(`Hashtagi: ${reel.hashtags.join(' ')}`, 10);
-    }
-    y += 4;
-  }
-
   if (analysis.titles?.length) {
     addText('Propozycje tytulow', 14, true);
     analysis.titles.forEach((t, i) => {
@@ -81,6 +62,25 @@ export function exportPDF(analysis: AnalysisResult, filename: string): void {
       addText(`   Styl: ${th.style}`, 10);
       addText(`   Inspiracja: ${th.reference}`, 10);
     });
+    y += 4;
+  }
+
+  addText('Propozycje rolek', 14, true);
+  for (const reel of analysis.reels) {
+    addText(`${reel.title} [${reel.priority.toUpperCase()}]`, 12, true);
+    addText(`Czas: ${reel.start} - ${reel.end} (${reel.duration})`, 10);
+    addText(`Hook: ${reel.hook}`, 10);
+    addText(`Dlaczego: ${reel.why}`, 10);
+    addText(`Zarys: ${reel.script_outline}`, 10);
+
+    if (reel.editing_tips?.length) {
+      addText('Tipy montazowe:', 10, true);
+      reel.editing_tips.forEach((tip) => addText(`  - ${tip}`, 10));
+    }
+
+    if (reel.hashtags?.length) {
+      addText(`Hashtagi: ${reel.hashtags.join(' ')}`, 10);
+    }
     y += 4;
   }
 

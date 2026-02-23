@@ -13,7 +13,7 @@ interface AnalysisPanelProps {
 
 export function AnalysisPanel({ analysis, onSeek }: AnalysisPanelProps) {
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 motion-safe:animate-fade-in">
       {/* Summary */}
       <div className="bg-dark-900 border border-dark-800 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-3">
