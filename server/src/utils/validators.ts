@@ -7,7 +7,7 @@ const ALLOWED_MIME_TYPES = [
   'video/mpeg',
 ];
 
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2147483648', 10); // 2GB
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '53687091200', 10); // 50GB
 
 export function isValidMimeType(mime: string): boolean {
   return ALLOWED_MIME_TYPES.includes(mime);

@@ -102,8 +102,8 @@ export function startAnalysis(
             try {
               const data = JSON.parse(line.slice(6));
               onMessage(data);
-            } catch {
-              // ignore
+            } catch (e) {
+              console.error('SSE JSON parse error:', e, 'Line:', line.substring(0, 200));
             }
           }
         }

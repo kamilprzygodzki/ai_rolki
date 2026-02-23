@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import { AnalysisResult, TranscriptResult } from '../types';
 import { buildAnalysisPrompt } from '../prompts/analysis.prompt';
 import logger from '../utils/logger';
+import fs from 'fs';
+import path from 'path';
 
 export const AVAILABLE_MODELS = [
   { id: 'google/gemini-2.5-pro-preview', name: 'Gemini 2.5 Pro' },
@@ -34,35 +36,6 @@ function formatTranscriptWithTimecodes(transcript: TranscriptResult): string {
     .join('\n');
 }
 
-function chunkTranscript(transcript: TranscriptResult, maxDurationMin: number = 30): string[] {
-  if (transcript.duration <= maxDurationMin * 60) {
-    return [formatTranscriptWithTimecodes(transcript)];
-  }
-
-  const chunks: string[] = [];
-  const chunkSize = maxDurationMin * 60;
-  let currentChunk: string[] = [];
-  let chunkStart = 0;
-
-  for (const seg of transcript.segments) {
-    if (seg.start - chunkStart >= chunkSize && currentChunk.length > 0) {
-      chunks.push(currentChunk.join('\n'));
-      currentChunk = [];
-      chunkStart = seg.start;
-    }
-    const mins = Math.floor(seg.start / 60);
-    const secs = Math.floor(seg.start % 60);
-    const ts = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    currentChunk.push(`[${ts}] ${seg.text}`);
-  }
-
-  if (currentChunk.length > 0) {
-    chunks.push(currentChunk.join('\n'));
-  }
-
-  return chunks;
-}
-
 async function callWithRetry(
   client: OpenAI,
   model: string,
@@ -75,10 +48,22 @@ async function callWithRetry(
         model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: 16384,
       });
 
-      return response.choices[0]?.message?.content || '';
+      let content = response.choices[0]?.message?.content || '';
+      const finishReason = response.choices[0]?.finish_reason;
+      logger.info(`OpenRouter response: finish_reason=${finishReason}, length=${content.length}`);
+
+      // Strip thinking tags that some models (Gemini) may include
+      content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+      // Debug: dump full response to file
+      const debugPath = path.join(process.env.UPLOAD_DIR || './uploads', `_debug_response_${Date.now()}.txt`);
+      fs.writeFileSync(debugPath, content);
+      logger.info(`Full AI response saved to ${debugPath}`);
+
+      return content;
     } catch (err: any) {
       const delay = Math.pow(2, attempt) * 1000;
       logger.warn(`OpenRouter attempt ${attempt + 1} failed, retrying in ${delay}ms:`, err.message);
@@ -90,29 +75,107 @@ async function callWithRetry(
   throw new Error('Max retries exceeded');
 }
 
-function parseAnalysisJSON(raw: string): AnalysisResult {
-  // Try direct parse
-  try {
-    return JSON.parse(raw);
-  } catch {
-    // Try extracting from code block
-    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      try {
-        return JSON.parse(codeBlockMatch[1].trim());
-      } catch {
-        // fall through
-      }
-    }
+function extractJSON(raw: string): string {
+  // 1. Try to extract from complete code block
+  const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) return codeBlockMatch[1].trim();
 
-    // Try finding JSON object
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-
-    throw new Error('Nie udało się sparsować odpowiedzi AI jako JSON');
+  // 2. Try to extract from unclosed code block (truncated response)
+  const unclosedBlock = raw.match(/```(?:json)?\s*([\s\S]*)/);
+  if (unclosedBlock) {
+    const content = unclosedBlock[1].trim();
+    // Remove trailing ``` if partially present
+    return content.replace(/`{0,2}$/, '').trim();
   }
+
+  // 3. Raw text — try to find JSON start
+  const jsonStart = raw.indexOf('{');
+  if (jsonStart >= 0) return raw.substring(jsonStart);
+
+  return raw;
+}
+
+function repairTruncatedJSON(text: string): string {
+  let repaired = text.trimEnd();
+
+  // Remove incomplete trailing key-value (e.g. `"key": "incomplete text`)
+  // First, try to close any open string by removing the incomplete part
+  // Track state through the JSON
+  let inString = false;
+  let escape = false;
+  let lastCompletePos = 0;
+  const stack: string[] = [];
+
+  for (let i = 0; i < repaired.length; i++) {
+    const ch = repaired[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') {
+      inString = !inString;
+      if (!inString) lastCompletePos = i; // end of string
+      continue;
+    }
+    if (inString) continue;
+
+    if (ch === '{' || ch === '[') {
+      stack.push(ch);
+      lastCompletePos = i;
+    } else if (ch === '}' || ch === ']') {
+      stack.pop();
+      lastCompletePos = i;
+    } else if (ch === ',' || ch === ':') {
+      lastCompletePos = i;
+    }
+  }
+
+  if (inString) {
+    // We're inside an unclosed string — close it
+    repaired += '"';
+  }
+
+  // Remove trailing comma
+  repaired = repaired.replace(/,\s*$/, '');
+
+  // Close remaining open brackets/braces in reverse order
+  for (let i = stack.length - 1; i >= 0; i--) {
+    repaired += stack[i] === '{' ? '}' : ']';
+  }
+
+  return repaired;
+}
+
+function parseAnalysisJSON(raw: string): AnalysisResult {
+  // Extract JSON from code blocks or raw text
+  const jsonText = extractJSON(raw);
+
+  // 1. Try direct parse
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    // continue
+  }
+
+  // 2. Try finding complete JSON object
+  const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      // continue
+    }
+  }
+
+  // 3. Try repairing truncated JSON
+  const repaired = repairTruncatedJSON(jsonText);
+  try {
+    const result = JSON.parse(repaired);
+    logger.warn('AI response was truncated — repaired JSON successfully');
+    return result;
+  } catch (e) {
+    logger.error(`JSON repair failed. Repaired text (last 200 chars): ${repaired.substring(repaired.length - 200)}`);
+  }
+
+  throw new Error('Nie udało się sparsować odpowiedzi AI jako JSON');
 }
 
 export async function analyzeTranscript(
@@ -121,30 +184,14 @@ export async function analyzeTranscript(
   onProgress?: (message: string) => void
 ): Promise<AnalysisResult> {
   const client = getOpenRouterClient();
-  const chunks = chunkTranscript(transcript);
 
-  if (chunks.length === 1) {
-    onProgress?.('Analizuję transkrypcję...');
-    const prompt = buildAnalysisPrompt(chunks[0], transcript.duration);
-    const raw = await callWithRetry(client, model, prompt);
-    return parseAnalysisJSON(raw);
-  }
+  // Send full transcript as single request — avoids multi-chunk merge issues
+  // and saves API credits. Most models handle 60+ min transcripts fine.
+  const fullText = formatTranscriptWithTimecodes(transcript);
+  onProgress?.('Analizuję transkrypcję...');
 
-  // Multi-chunk: analyze each, then merge
-  const partialResults: AnalysisResult[] = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    onProgress?.(`Analizuję część ${i + 1}/${chunks.length}...`);
-    const prompt = buildAnalysisPrompt(chunks[i], transcript.duration);
-    const raw = await callWithRetry(client, model, prompt);
-    partialResults.push(parseAnalysisJSON(raw));
-  }
-
-  // Merge results
-  return {
-    summary: partialResults.map((r) => r.summary).join(' '),
-    reels: partialResults.flatMap((r) => r.reels),
-    hooks: partialResults.flatMap((r) => r.hooks).slice(0, 10),
-    structure_notes: partialResults.map((r) => r.structure_notes).join('\n\n'),
-  };
+  const prompt = buildAnalysisPrompt(fullText, transcript.duration);
+  const raw = await callWithRetry(client, model, prompt);
+  logger.info(`Parsing response (${raw.length} chars)`);
+  return parseAnalysisJSON(raw);
 }

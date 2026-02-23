@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
+import { getMaxFileSize } from '../utils/validators';
 
 export function errorMiddleware(
   err: Error,
@@ -15,7 +16,8 @@ export function errorMiddleware(
   }
 
   if (err.message?.includes('File too large')) {
-    res.status(413).json({ error: 'Plik jest za duży. Maksymalny rozmiar: 2GB' });
+    const maxGB = (getMaxFileSize() / (1024 * 1024 * 1024)).toFixed(0);
+    res.status(413).json({ error: `Plik jest za duży. Maksymalny rozmiar: ${maxGB}GB` });
     return;
   }
 

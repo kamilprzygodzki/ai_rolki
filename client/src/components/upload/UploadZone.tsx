@@ -1,6 +1,5 @@
 import { useCallback, useState, useRef } from 'react';
 import { Upload, Film } from 'lucide-react';
-import { formatFileSize } from '../../utils/formatTime';
 
 interface UploadZoneProps {
   onUpload: (file: File) => void;
@@ -69,7 +68,7 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
             {dragging ? 'Upusc plik tutaj' : 'Przeciagnij wideo lub kliknij'}
           </p>
           <p className="text-sm text-dark-400 mt-1">
-            MP4, MOV, AVI, WebM, MKV — maks. {formatFileSize(2147483648)}
+            MP4, MOV, AVI, WebM, MKV — nawet długie nagrania
           </p>
         </div>
       </div>

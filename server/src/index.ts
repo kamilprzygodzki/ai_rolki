@@ -48,6 +48,10 @@ const server = app.listen(PORT, () => {
   logger.info(`Server running on http://localhost:${PORT}`);
 });
 
+// Disable timeouts for large file uploads
+server.timeout = 0;
+server.requestTimeout = 0;
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
