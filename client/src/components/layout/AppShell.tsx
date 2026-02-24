@@ -98,7 +98,7 @@ export function AppShell() {
           </div>
         )}
 
-        {analysisHook.analyzing && (
+        {analysisHook.analyzing && !hasAnalysis && (
           <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 animate-fade-in">
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
@@ -134,14 +134,38 @@ export function AppShell() {
             </div>
 
             <div className="space-y-6">
-              {hasAnalysis && (
+              {hasAnalysis && analysisHook.analyzing && (
+                <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-dark-300">{analysisHook.progressMessage}</span>
+                  </div>
+                </div>
+              )}
+              {hasAnalysis && !analysisHook.analyzing && (
                 <>
-                  <div className="flex justify-end">
-                    <ExportButton
-                      sessionId={upload.sessionId!}
-                      analysis={analysisHook.analysis!}
-                      filename={upload.filename}
-                    />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <ModelSelector
+                        models={models}
+                        selected={selectedModel}
+                        onChange={setSelectedModel}
+                      />
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={!selectedModel}
+                        className="shrink-0 mt-auto px-4 py-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-violet-500/50 disabled:opacity-50 rounded-lg text-sm font-medium transition-all"
+                      >
+                        Ponow analize
+                      </button>
+                    </div>
+                    <div className="mt-auto">
+                      <ExportButton
+                        sessionId={upload.sessionId!}
+                        analysis={analysisHook.analysis!}
+                        filename={upload.filename}
+                      />
+                    </div>
                   </div>
                   <AnalysisPanel
                     analysis={analysisHook.analysis!}
