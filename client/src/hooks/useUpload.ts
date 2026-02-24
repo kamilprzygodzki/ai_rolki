@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { uploadVideo, subscribeToStatus, startTranscription } from '../services/api';
+import { uploadVideo, uploadTranscript, subscribeToStatus, startTranscription } from '../services/api';
 import { SessionState, SessionStatus } from '../types';
 import toast from 'react-hot-toast';
 
@@ -17,10 +17,32 @@ export function useUpload() {
     setError(null);
     setFilename(file.name);
 
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    const isTranscript = ['.txt', '.json', '.srt'].includes(ext);
+
     try {
-      const result = await uploadVideo(file, (percent) => {
-        setProgress(percent);
-      });
+      const onProgress = (percent: number) => setProgress(percent);
+
+      if (isTranscript) {
+        const result = await uploadTranscript(file, onProgress);
+        setSessionId(result.id);
+
+        // Transcript is ready immediately — subscribe to get full session state
+        const unsub = subscribeToStatus(
+          result.id,
+          (data: SessionState) => {
+            setStatus(data.status as SessionStatus);
+            setProgress(data.progress);
+          },
+          (err) => {
+            console.warn('SSE error:', err);
+          }
+        );
+
+        return () => unsub();
+      }
+
+      const result = await uploadVideo(file, onProgress);
 
       setSessionId(result.id);
       setStatus('processing_audio');

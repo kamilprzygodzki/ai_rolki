@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, ChevronDown, ChevronUp, Hash } from 'lucide-react';
+import { Clock, ChevronDown, ChevronUp, Hash, TrendingUp, Eye } from 'lucide-react';
 import { ReelSuggestion } from '../../types';
 import { PriorityBadge } from './PriorityBadge';
 import { EditingSuggestions } from './EditingSuggestions';
@@ -75,6 +75,23 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
         </div>
 
         <p className="text-xs text-dark-300 mt-2 italic">"{reel.hook}"</p>
+
+        {reel.ctr_potential > 0 && (
+          <div className="flex items-center gap-2 mt-2.5">
+            <TrendingUp className="w-3 h-3 text-dark-500 shrink-0" />
+            <span className="text-[11px] text-dark-500">CTR</span>
+            <div className="flex-1 h-1.5 bg-dark-800 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${reel.ctr_potential * 10}%`,
+                  backgroundColor: reel.ctr_potential >= 8 ? '#22c55e' : reel.ctr_potential >= 5 ? '#eab308' : '#ef4444',
+                }}
+              />
+            </div>
+            <span className="text-[11px] font-mono font-semibold text-dark-300">{reel.ctr_potential}/10</span>
+          </div>
+        )}
       </div>
 
       {expanded && (
@@ -88,6 +105,16 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
             <p className="text-xs font-medium text-dark-400 mb-1">Zarys skryptu</p>
             <p className="text-sm text-dark-200">{reel.script_outline}</p>
           </div>
+
+          {reel.retention_strategy && (
+            <div>
+              <p className="text-xs font-medium text-dark-400 mb-1 flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                Strategia retencji
+              </p>
+              <p className="text-sm text-dark-200">{reel.retention_strategy}</p>
+            </div>
+          )}
 
           <EditingSuggestions tips={reel.editing_tips} />
 

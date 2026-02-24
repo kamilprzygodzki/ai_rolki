@@ -6,7 +6,14 @@ interface ModelSelectorProps {
   onChange: (model: string) => void;
 }
 
+function formatCost(cost: number): string {
+  if (cost < 0.01) return '<$0.01';
+  return `~$${cost.toFixed(2)}`;
+}
+
 export function ModelSelector({ models, selected, onChange }: ModelSelectorProps) {
+  const selectedModel = models.find((m) => m.id === selected);
+
   return (
     <div className="flex-1">
       <label className="block text-sm font-medium text-dark-300 mb-1.5">
@@ -19,10 +26,15 @@ export function ModelSelector({ models, selected, onChange }: ModelSelectorProps
       >
         {models.map((m) => (
           <option key={m.id} value={m.id}>
-            {m.name}
+            {m.name}{m.estimatedCost != null ? ` (${formatCost(m.estimatedCost)})` : ''}
           </option>
         ))}
       </select>
+      {selectedModel?.estimatedCost != null && (
+        <p className="text-[11px] text-dark-500 mt-1">
+          Szacowany koszt analizy: {formatCost(selectedModel.estimatedCost)}
+        </p>
+      )}
     </div>
   );
 }

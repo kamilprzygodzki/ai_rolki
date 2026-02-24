@@ -108,8 +108,8 @@ export function AppShell() {
         )}
 
         {(hasTranscript || hasAnalysis) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="space-y-6 lg:sticky lg:top-[5.5rem] lg:self-start">
               {upload.filepath && (
                 <VideoPreview
                   src={getVideoUrl(upload.filepath)}

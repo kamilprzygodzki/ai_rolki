@@ -6,6 +6,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import uploadRouter from './routes/upload';
+import uploadTranscriptRouter from './routes/upload-transcript';
 import statusRouter from './routes/status';
 import transcribeRouter from './routes/transcribe';
 import analyzeRouter from './routes/analyze';
@@ -31,6 +32,7 @@ app.use('/uploads', express.static(path.resolve(UPLOAD_DIR)));
 
 // Routes
 app.use('/api/upload', uploadRouter);
+app.use('/api/upload-transcript', uploadTranscriptRouter);
 app.use('/api/status', statusRouter);
 app.use('/api/transcribe', transcribeRouter);
 app.use('/api/analyze', analyzeRouter);

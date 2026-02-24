@@ -22,6 +22,8 @@ export interface ReelSuggestion {
   script_outline: string;
   editing_tips: string[];
   hashtags: string[];
+  ctr_potential: number;
+  retention_strategy: string;
 }
 
 export interface TitleSuggestion {
@@ -35,12 +37,20 @@ export interface ThumbnailSuggestion {
   text_overlay: string;
   style: string;
   reference: string;
+  color_palette: string;
+  face_expression: string;
+  composition: string;
+}
+
+export interface HookSuggestion {
+  text: string;
+  type: string;
 }
 
 export interface AnalysisResult {
   summary: string;
   reels: ReelSuggestion[];
-  hooks: string[];
+  hooks: HookSuggestion[];
   structure_notes: string;
   titles: TitleSuggestion[];
   thumbnails: ThumbnailSuggestion[];
@@ -71,4 +81,5 @@ export interface SessionState {
 export interface ModelOption {
   id: string;
   name: string;
+  estimatedCost?: number;
 }

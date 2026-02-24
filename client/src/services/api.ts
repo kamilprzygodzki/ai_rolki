@@ -33,6 +33,41 @@ export async function uploadVideo(
   });
 }
 
+export async function uploadTranscript(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ id: string; filename: string }> {
+  const formData = new FormData();
+  formData.append('transcript', file);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE}/upload-transcript`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error || 'Upload failed'));
+        } catch {
+          reject(new Error('Upload failed'));
+        }
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Błąd sieci'));
+    xhr.send(formData);
+  });
+}
+
 export function subscribeToStatus(
   sessionId: string,
   onMessage: (data: any) => void,

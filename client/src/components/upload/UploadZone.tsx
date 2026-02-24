@@ -49,7 +49,7 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="video/*"
+        accept="video/*,.txt,.json,.srt"
         onChange={handleChange}
         className="hidden"
       />
@@ -65,10 +65,10 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
 
         <div>
           <p className="text-lg font-medium text-white">
-            {dragging ? 'Upusc plik tutaj' : 'Przeciagnij wideo lub kliknij'}
+            {dragging ? 'Upusc plik tutaj' : 'Przeciagnij plik lub kliknij'}
           </p>
           <p className="text-sm text-dark-400 mt-1">
-            MP4, MOV, AVI, WebM, MKV — nawet długie nagrania
+            Wideo (MP4, MOV, AVI, WebM, MKV) lub transkrypcja (.txt, .json, .srt)
           </p>
         </div>
       </div>

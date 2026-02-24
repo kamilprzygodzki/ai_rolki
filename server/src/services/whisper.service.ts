@@ -59,7 +59,7 @@ async function transcribeFile(
   const file = fs.createReadStream(filePath);
 
   const response = await client.audio.transcriptions.create({
-    model: 'whisper-1',
+    model: process.env.WHISPER_MODEL || 'whisper-1',
     file,
     response_format: 'verbose_json',
     timestamp_granularities: ['segment'],

@@ -1,17 +1,22 @@
 import OpenAI from 'openai';
-import { AnalysisResult, TranscriptResult } from '../types';
+import { AnalysisResult, HookSuggestion, TranscriptResult } from '../types';
 import { buildAnalysisPrompt } from '../prompts/analysis.prompt';
 import logger from '../utils/logger';
 import fs from 'fs';
 import path from 'path';
 
+// Pricing: $/1M tokens from OpenRouter. estimatedCost = typical analysis (~6k in + ~4k out tokens).
 export const AVAILABLE_MODELS = [
-  { id: 'google/gemini-2.5-pro-preview', name: 'Gemini 2.5 Pro' },
-  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4' },
-  { id: 'openai/gpt-4o', name: 'GPT-4o' },
-  { id: 'anthropic/claude-haiku-3.5', name: 'Claude Haiku 3.5' },
-  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
-  { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash' },
+  { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', estimatedCost: 0.06 },
+  { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', estimatedCost: 0.08 },
+  { id: 'anthropic/claude-opus-4.6', name: 'Claude Opus 4.6', estimatedCost: 0.13 },
+  { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', estimatedCost: 0.003 },
+  { id: 'openai/gpt-5.1', name: 'GPT-5.1', estimatedCost: 0.05 },
+  { id: 'qwen/qwen3.5-plus-02-15', name: 'Qwen 3.5 Plus', estimatedCost: 0.01 },
+  { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', estimatedCost: 0.003 },
+  { id: 'mistralai/mistral-large-2512', name: 'Mistral Large 3', estimatedCost: 0.01 },
+  { id: 'x-ai/grok-4.1-fast', name: 'Grok 4.1 Fast', estimatedCost: 0.003 },
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', estimatedCost: 0.02 },
 ];
 
 function getOpenRouterClient(): OpenAI {
@@ -42,13 +47,20 @@ async function callWithRetry(
   prompt: string,
   maxRetries: number = 3
 ): Promise<string> {
+  // OpenAI models support response_format to force valid JSON output
+  const useJsonFormat = model.startsWith('openai/');
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await client.chat.completions.create({
         model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          ...(useJsonFormat ? [{ role: 'system' as const, content: 'Respond with valid JSON only. Analyze the video transcript as instructed.' }] : []),
+          { role: 'user', content: prompt },
+        ],
         temperature: 0.7,
         max_tokens: 16384,
+        ...(useJsonFormat ? { response_format: { type: 'json_object' } } : {}),
       });
 
       let content = response.choices[0]?.message?.content || '';
@@ -145,6 +157,18 @@ function repairTruncatedJSON(text: string): string {
 }
 
 function parseAnalysisJSON(raw: string): AnalysisResult {
+  // Detect model refusals before trying to parse JSON
+  const trimmed = raw.trim().toLowerCase();
+  if (
+    trimmed.startsWith("i'm sorry") ||
+    trimmed.startsWith('i cannot') ||
+    trimmed.startsWith("i can't") ||
+    trimmed.startsWith('sorry,') ||
+    (trimmed.length < 200 && !trimmed.includes('{'))
+  ) {
+    throw new Error(`Model odmówił analizy: "${raw.trim().substring(0, 150)}"`);
+  }
+
   // Extract JSON from code blocks or raw text
   const jsonText = extractJSON(raw);
 
@@ -178,6 +202,41 @@ function parseAnalysisJSON(raw: string): AnalysisResult {
   throw new Error('Nie udało się sparsować odpowiedzi AI jako JSON');
 }
 
+function normalizeAnalysisResult(result: any): AnalysisResult {
+  // Ensure all top-level arrays exist
+  result.summary = result.summary || '';
+  result.structure_notes = result.structure_notes || '';
+  result.reels = Array.isArray(result.reels) ? result.reels : [];
+  result.titles = Array.isArray(result.titles) ? result.titles : [];
+  result.thumbnails = Array.isArray(result.thumbnails) ? result.thumbnails : [];
+
+  // Normalize hooks: string[] → HookSuggestion[]
+  if (Array.isArray(result.hooks)) {
+    result.hooks = result.hooks.map((h: unknown): HookSuggestion =>
+      typeof h === 'string' ? { text: h, type: 'open_loop' } : h as HookSuggestion
+    );
+  } else {
+    result.hooks = [];
+  }
+
+  // Normalize reel fields
+  for (const reel of result.reels) {
+    reel.editing_tips = Array.isArray(reel.editing_tips) ? reel.editing_tips : [];
+    reel.hashtags = Array.isArray(reel.hashtags) ? reel.hashtags : [];
+    reel.ctr_potential = typeof reel.ctr_potential === 'number' ? reel.ctr_potential : 5;
+    reel.retention_strategy = reel.retention_strategy || '';
+  }
+
+  // Normalize thumbnail fields
+  for (const thumb of result.thumbnails) {
+    thumb.color_palette = thumb.color_palette || '';
+    thumb.face_expression = thumb.face_expression || '';
+    thumb.composition = thumb.composition || '';
+  }
+
+  return result as AnalysisResult;
+}
+
 export async function analyzeTranscript(
   transcript: TranscriptResult,
   model: string,
@@ -193,11 +252,6 @@ export async function analyzeTranscript(
   const prompt = buildAnalysisPrompt(fullText, transcript.duration);
   const raw = await callWithRetry(client, model, prompt);
   logger.info(`Parsing response (${raw.length} chars)`);
-  const result = parseAnalysisJSON(raw);
-
-  // Ensure new fields have fallback defaults
-  result.titles = result.titles || [];
-  result.thumbnails = result.thumbnails || [];
-
-  return result;
+  const parsed = parseAnalysisJSON(raw);
+  return normalizeAnalysisResult(parsed);
 }
