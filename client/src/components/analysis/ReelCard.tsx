@@ -22,11 +22,13 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
 
   return (
     <div
-      className={`border rounded-xl overflow-hidden transition-all duration-300 animate-slide-up ${colors.border} ${colors.bg}`}
+      className={`border rounded-xl overflow-hidden transition-all duration-300 motion-safe:animate-slide-up ${colors.border} ${colors.bg}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div
-        className="p-4 cursor-pointer"
+      <button
+        type="button"
+        aria-expanded={expanded}
+        className="w-full p-4 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-inset rounded-t-xl"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-start justify-between gap-3">
@@ -39,65 +41,66 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
               {reel.title}
             </h4>
           </div>
-          <button className="p-1 shrink-0 text-dark-400">
+          <span className="p-2 shrink-0 text-dark-400" aria-hidden="true">
             {expanded ? (
               <ChevronUp className="w-4 h-4" />
             ) : (
               <ChevronDown className="w-4 h-4" />
             )}
-          </button>
+          </span>
         </div>
 
         <div className="flex items-center gap-3 mt-2 text-xs text-dark-400">
           <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
+            <Clock className="w-3 h-3" aria-hidden="true" />
             {reel.duration}
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTimecodeClick(reel.start);
-            }}
-            className="font-mono text-violet-400 hover:text-violet-300"
-          >
+          <span className="font-mono text-violet-400">
             {reel.start}
-          </button>
-          <span>-</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTimecodeClick(reel.end);
-            }}
-            className="font-mono text-violet-400 hover:text-violet-300"
-          >
+          </span>
+          <span>–</span>
+          <span className="font-mono text-violet-400">
             {reel.end}
-          </button>
+          </span>
         </div>
 
         <p className="text-xs text-dark-300 mt-2 italic">"{reel.hook}"</p>
 
         {reel.ctr_potential > 0 && (
           <div className="flex items-center gap-2 mt-2.5">
-            <TrendingUp className="w-3 h-3 text-dark-500 shrink-0" />
-            <span className="text-[11px] text-dark-500">CTR</span>
-            <div className="flex-1 h-1.5 bg-dark-800 rounded-full overflow-hidden">
+            <TrendingUp className="w-3 h-3 text-dark-500 shrink-0" aria-hidden="true" />
+            <span className="text-xs text-dark-500">CTR</span>
+            <div className="flex-1 h-1.5 bg-dark-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow={reel.ctr_potential} aria-valuemin={0} aria-valuemax={10}>
               <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${reel.ctr_potential * 10}%`,
-                  backgroundColor: reel.ctr_potential >= 8 ? '#22c55e' : reel.ctr_potential >= 5 ? '#eab308' : '#ef4444',
-                }}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  reel.ctr_potential >= 8 ? 'bg-green-500' : reel.ctr_potential >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${reel.ctr_potential * 10}%` }}
               />
             </div>
-            <span className="text-[11px] font-mono font-semibold text-dark-300">{reel.ctr_potential}/10</span>
+            <span className="text-xs font-mono font-semibold text-dark-300">{reel.ctr_potential}/10</span>
           </div>
         )}
-      </div>
+      </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-dark-800/50 pt-3 animate-fade-in">
+        <div className="px-4 pb-4 space-y-3 border-t border-dark-800/50 pt-3 motion-safe:animate-fade-in">
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleTimecodeClick(reel.start)}
+              className="font-mono text-xs text-violet-400 hover:text-violet-300 min-h-[44px] px-3 bg-dark-800/50 rounded-lg transition-colors"
+            >
+              {reel.start}
+            </button>
+            <button
+              onClick={() => handleTimecodeClick(reel.end)}
+              className="font-mono text-xs text-violet-400 hover:text-violet-300 min-h-[44px] px-3 bg-dark-800/50 rounded-lg transition-colors"
+            >
+              {reel.end}
+            </button>
+          </div>
           <div>
-            <p className="text-xs font-medium text-dark-400 mb-1">Dlaczego zadziala</p>
+            <p className="text-xs font-medium text-dark-400 mb-1">Dlaczego zadziała</p>
             <p className="text-sm text-dark-200">{reel.why}</p>
           </div>
 
@@ -109,7 +112,7 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
           {reel.retention_strategy && (
             <div>
               <p className="text-xs font-medium text-dark-400 mb-1 flex items-center gap-1">
-                <Eye className="w-3 h-3" />
+                <Eye className="w-3 h-3" aria-hidden="true" />
                 Strategia retencji
               </p>
               <p className="text-sm text-dark-200">{reel.retention_strategy}</p>

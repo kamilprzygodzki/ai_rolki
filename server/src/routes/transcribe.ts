@@ -28,17 +28,18 @@ router.post('/:id', async (req: Request<{ id: string }>, res: Response) => {
   res.json({ message: 'Transkrypcja rozpoczęta' });
 
   try {
-    const transcript = await transcribeAudio(session.audioPath, (percent) => {
-      updateSession(id, { progress: percent });
+    const { transcript, provider } = await transcribeAudio(session.audioPath, (percent, providerName) => {
+      updateSession(id, { progress: percent, whisperProvider: providerName });
     });
 
     updateSession(id, {
       status: 'transcribing',
       progress: 100,
       transcript,
+      whisperProvider: provider,
     });
 
-    logger.info(`Transcription complete for session ${id}: ${transcript.segments.length} segments`);
+    logger.info(`Transcription complete for session ${id}: ${transcript.segments.length} segments (via ${provider})`);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Błąd transkrypcji';
     logger.error(`Transcription error for session ${id}:`, err);

@@ -11,6 +11,7 @@ interface TranscriptPanelProps {
   onSearchChange: (query: string) => void;
   onSeek: (time: number) => void;
   filteredSegments: TranscriptSegment[];
+  whisperProvider?: string;
 }
 
 export function TranscriptPanel({
@@ -20,6 +21,7 @@ export function TranscriptPanel({
   onSearchChange,
   onSeek,
   filteredSegments,
+  whisperProvider,
 }: TranscriptPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [highlightRange, setHighlightRange] = useState<[number, number] | null>(null);
@@ -33,13 +35,14 @@ export function TranscriptPanel({
   }, [currentTime]);
 
   return (
-    <div className="bg-dark-900 border border-dark-800 rounded-xl animate-fade-in">
+    <div className="bg-dark-900 border border-dark-800 rounded-xl motion-safe:animate-fade-in">
       <div className="p-4 border-b border-dark-800 space-y-3">
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-dark-400" />
+          <FileText className="w-4 h-4 text-dark-400" aria-hidden="true" />
           <h2 className="text-sm font-semibold text-white">Transkrypcja</h2>
           <span className="text-xs text-dark-500">
-            {transcript.segments.length} segmentow
+            {transcript.segments.length} segmentów
+            {whisperProvider && <> · {whisperProvider}</>}
           </span>
         </div>
         <TranscriptSearch query={searchQuery} onChange={onSearchChange} />
@@ -51,7 +54,7 @@ export function TranscriptPanel({
       >
         {filteredSegments.length === 0 ? (
           <p className="text-sm text-dark-500 text-center py-8">
-            Brak wynikow wyszukiwania
+            Brak wyników wyszukiwania
           </p>
         ) : (
           filteredSegments.map((seg, i) => {

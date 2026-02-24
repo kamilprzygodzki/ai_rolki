@@ -25,8 +25,8 @@ export function HookCard({ hooks }: HookCardProps) {
   return (
     <div className="bg-dark-900 border border-dark-800 rounded-xl p-5 motion-safe:animate-slide-up">
       <div className="flex items-center gap-2 mb-3">
-        <Zap className="w-4 h-4 text-violet-400" />
-        <h3 className="text-sm font-semibold text-white">Propozycje hookow</h3>
+        <Zap className="w-4 h-4 text-violet-400" aria-hidden="true" />
+        <h3 className="text-sm font-semibold text-white">Propozycje hooków</h3>
       </div>
       <ul className="space-y-2">
         {hooks.map((hook, i) => (

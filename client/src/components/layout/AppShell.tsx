@@ -58,6 +58,7 @@ export function AppShell() {
             progress={upload.progress}
             filename={upload.filename}
             error={upload.error}
+            whisperProvider={upload.whisperProvider}
             onReset={upload.reset}
           />
         )}
@@ -69,17 +70,20 @@ export function AppShell() {
               onClick={upload.reset}
               className="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-sm transition-colors"
             >
-              Sprobuj ponownie
+              Spróbuj ponownie
             </button>
           </div>
         )}
 
         {hasTranscript && !hasAnalysis && !analysisHook.analyzing && (
-          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4 animate-fade-in">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4 motion-safe:animate-fade-in">
             <h2 className="text-lg font-semibold text-white">Transkrypcja gotowa</h2>
             <p className="text-dark-400 text-sm">
-              {transcription.transcript!.segments.length} segmentow,{' '}
+              {transcription.transcript!.segments.length} segmentów,{' '}
               {Math.round(transcription.transcript!.duration / 60)} min
+              {upload.whisperProvider && (
+                <span className="text-dark-500"> · {upload.whisperProvider}</span>
+              )}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
               <ModelSelector
@@ -99,9 +103,9 @@ export function AppShell() {
         )}
 
         {analysisHook.analyzing && !hasAnalysis && (
-          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 animate-fade-in">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 motion-safe:animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full motion-safe:animate-spin" />
               <span className="text-dark-300">{analysisHook.progressMessage}</span>
             </div>
           </div>
@@ -129,15 +133,16 @@ export function AppShell() {
                   onSearchChange={transcription.setSearchQuery}
                   onSeek={videoPlayer.seekTo}
                   filteredSegments={transcription.filteredSegments()}
+                  whisperProvider={upload.whisperProvider}
                 />
               )}
             </div>
 
             <div className="space-y-6">
               {hasAnalysis && analysisHook.analyzing && (
-                <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 animate-fade-in">
+                <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 motion-safe:animate-fade-in">
                   <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full motion-safe:animate-spin" />
                     <span className="text-dark-300">{analysisHook.progressMessage}</span>
                   </div>
                 </div>
@@ -156,7 +161,7 @@ export function AppShell() {
                         disabled={!selectedModel}
                         className="shrink-0 mt-auto px-4 py-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-violet-500/50 disabled:opacity-50 rounded-lg text-sm font-medium transition-all"
                       >
-                        Ponow analize
+                        Ponów analizę
                       </button>
                     </div>
                     <div className="mt-auto">

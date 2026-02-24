@@ -10,8 +10,8 @@ export function EditingSuggestions({ tips }: EditingSuggestionsProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 text-xs font-medium text-dark-400">
-        <Clapperboard className="w-3 h-3" />
-        Tipy montazowe
+        <Clapperboard className="w-3 h-3" aria-hidden="true" />
+        Tipy montażowe
       </div>
       <ul className="space-y-1">
         {tips.map((tip, i) => (

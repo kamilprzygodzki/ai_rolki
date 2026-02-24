@@ -34,13 +34,13 @@ export function ThumbnailCard({ thumbnails }: ThumbnailCardProps) {
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {thumb.color_palette && (
                     <span className="inline-flex items-center gap-1 text-[11px] bg-dark-700 text-amber-400 px-2 py-0.5 rounded-full">
-                      <Palette className="w-3 h-3" />
+                      <Palette className="w-3 h-3" aria-hidden="true" />
                       {thumb.color_palette}
                     </span>
                   )}
                   {thumb.face_expression && (
                     <span className="inline-flex items-center gap-1 text-[11px] bg-dark-700 text-rose-400 px-2 py-0.5 rounded-full">
-                      <User className="w-3 h-3" />
+                      <User className="w-3 h-3" aria-hidden="true" />
                       {thumb.face_expression}
                     </span>
                   )}
@@ -51,7 +51,7 @@ export function ThumbnailCard({ thumbnails }: ThumbnailCardProps) {
               <p className="text-xs text-dark-300 leading-relaxed">{thumb.concept}</p>
               {thumb.composition && (
                 <p className="text-xs text-dark-400 leading-relaxed flex items-center gap-1">
-                  <Layout className="w-3 h-3 shrink-0" />
+                  <Layout className="w-3 h-3 shrink-0" aria-hidden="true" />
                   {thumb.composition}
                 </p>
               )}

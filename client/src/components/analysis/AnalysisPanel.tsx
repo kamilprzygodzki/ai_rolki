@@ -17,7 +17,7 @@ export function AnalysisPanel({ analysis, onSeek }: AnalysisPanelProps) {
       {/* Summary */}
       <div className="bg-dark-900 border border-dark-800 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-violet-400" />
+          <Sparkles className="w-4 h-4 text-violet-400" aria-hidden="true" />
           <h2 className="text-sm font-semibold text-white">Podsumowanie</h2>
         </div>
         <p className="text-sm text-dark-300 leading-relaxed">{analysis.summary}</p>

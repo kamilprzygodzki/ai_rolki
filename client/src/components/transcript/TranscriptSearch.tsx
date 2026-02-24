@@ -8,7 +8,7 @@ interface TranscriptSearchProps {
 export function TranscriptSearch({ query, onChange }: TranscriptSearchProps) {
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" aria-hidden="true" />
       <input
         type="text"
         value={query}

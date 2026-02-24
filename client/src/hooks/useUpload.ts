@@ -10,6 +10,7 @@ export function useUpload() {
   const [filename, setFilename] = useState('');
   const [filepath, setFilepath] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [whisperProvider, setWhisperProvider] = useState<string | undefined>();
 
   const upload = useCallback(async (file: File) => {
     setStatus('uploading');
@@ -33,6 +34,7 @@ export function useUpload() {
           (data: SessionState) => {
             setStatus(data.status as SessionStatus);
             setProgress(data.progress);
+            if (data.whisperProvider) setWhisperProvider(data.whisperProvider);
           },
           (err) => {
             console.warn('SSE error:', err);
@@ -55,6 +57,7 @@ export function useUpload() {
           setStatus(data.status as SessionStatus);
           setProgress(data.progress);
           if (data.filepath) setFilepath(data.filepath);
+          if (data.whisperProvider) setWhisperProvider(data.whisperProvider);
 
           if (data.error) {
             setError(data.error);
@@ -92,6 +95,7 @@ export function useUpload() {
     setFilename('');
     setFilepath('');
     setError(null);
+    setWhisperProvider(undefined);
   }, []);
 
   return {
@@ -101,6 +105,7 @@ export function useUpload() {
     filename,
     filepath,
     error,
+    whisperProvider,
     upload,
     reset,
     setStatus,

@@ -76,6 +76,7 @@ export interface SessionState {
   analysis?: AnalysisResult;
   error?: string;
   model?: string;
+  whisperProvider?: string;
 }
 
 export interface ModelOption {

@@ -29,6 +29,9 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Przeciągnij plik lub kliknij, aby wybrać"
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -36,9 +39,15 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       className={`
-        border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
-        transition-all duration-200
+        border-2 border-dashed rounded-xl p-6 sm:p-8 lg:p-12 text-center cursor-pointer
+        transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-dark-950
         ${
           dragging
             ? 'border-violet-500 bg-violet-500/10'
@@ -65,7 +74,7 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
 
         <div>
           <p className="text-lg font-medium text-white">
-            {dragging ? 'Upusc plik tutaj' : 'Przeciagnij plik lub kliknij'}
+            {dragging ? 'Upuść plik tutaj' : 'Przeciągnij plik lub kliknij'}
           </p>
           <p className="text-sm text-dark-400 mt-1">
             Wideo (MP4, MOV, AVI, WebM, MKV) lub transkrypcja (.txt, .json, .srt)
