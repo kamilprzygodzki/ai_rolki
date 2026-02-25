@@ -1,5 +1,8 @@
 import { RefObject, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { EngagementTimeline } from './EngagementTimeline';
+import { RetentionOverlay } from './RetentionOverlay';
+import { EngagementSegment, RetentionPrediction } from '../../types';
 
 interface VideoPreviewProps {
   src: string;
@@ -8,6 +11,10 @@ interface VideoPreviewProps {
   onLoadedMetadata: () => void;
   onPlay: () => void;
   onPause: () => void;
+  engagementMap?: EngagementSegment[];
+  retentionPrediction?: RetentionPrediction;
+  duration?: number;
+  onSeek?: (time: number) => void;
 }
 
 export function VideoPreview({
@@ -17,8 +24,19 @@ export function VideoPreview({
   onLoadedMetadata,
   onPlay,
   onPause,
+  engagementMap,
+  retentionPrediction,
+  duration,
+  onSeek,
 }: VideoPreviewProps) {
   const [error, setError] = useState(false);
+
+  const handleSeek = (time: number) => {
+    if (onSeek) onSeek(time);
+    else if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
 
   if (error) {
     return (
@@ -30,6 +48,9 @@ export function VideoPreview({
       </div>
     );
   }
+
+  const videoDuration = duration || 0;
+  const hasOverlays = (engagementMap && engagementMap.length > 0) || retentionPrediction;
 
   return (
     <div className="bg-dark-900 border border-dark-800 rounded-xl overflow-hidden motion-safe:animate-fade-in">
@@ -45,6 +66,24 @@ export function VideoPreview({
         onError={() => setError(true)}
         className="w-full aspect-video bg-black"
       />
+      {hasOverlays && videoDuration > 0 && (
+        <div className="relative space-y-1 pt-1">
+          {engagementMap && engagementMap.length > 0 && (
+            <EngagementTimeline
+              segments={engagementMap}
+              duration={videoDuration}
+              onSeek={handleSeek}
+            />
+          )}
+          {retentionPrediction && (
+            <RetentionOverlay
+              prediction={retentionPrediction}
+              duration={videoDuration}
+              onSeek={handleSeek}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

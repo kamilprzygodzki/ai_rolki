@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { AnalysisResult, HookSuggestion, TranscriptResult } from '../types';
+import { AnalysisResult, HookSuggestion, TranscriptResult, EditingGuide, RetentionPrediction } from '../types';
 import { buildAnalysisPrompt } from '../prompts/analysis.prompt';
 import logger from '../utils/logger';
 import fs from 'fs';
@@ -202,6 +202,51 @@ function parseAnalysisJSON(raw: string): AnalysisResult {
   throw new Error('Nie udało się sparsować odpowiedzi AI jako JSON');
 }
 
+function normalizeEditingGuide(guide: any): EditingGuide | undefined {
+  if (!guide || typeof guide !== 'object') return undefined;
+  return {
+    pace: ['fast', 'medium', 'slow'].includes(guide.pace) ? guide.pace : 'medium',
+    cuts: Array.isArray(guide.cuts) ? guide.cuts.map((c: any) => ({
+      timecode: c.timecode || '00:00',
+      type: ['jump_cut', 'hard_cut', 'j_cut', 'l_cut'].includes(c.type) ? c.type : 'jump_cut',
+      description: c.description || '',
+    })) : [],
+    broll_moments: Array.isArray(guide.broll_moments) ? guide.broll_moments.map((b: any) => ({
+      start: b.start || '00:00',
+      end: b.end || '00:00',
+      suggestion: b.suggestion || '',
+    })) : [],
+    zoom_moments: Array.isArray(guide.zoom_moments) ? guide.zoom_moments.map((z: any) => ({
+      timecode: z.timecode || '00:00',
+      type: ['zoom_in', 'zoom_out', 'slow_zoom'].includes(z.type) ? z.type : 'zoom_in',
+      reason: z.reason || '',
+    })) : [],
+    text_overlays: Array.isArray(guide.text_overlays) ? guide.text_overlays.map((t: any) => ({
+      timecode: t.timecode || '00:00',
+      text: t.text || '',
+      style: ['lower_third', 'center', 'caption'].includes(t.style) ? t.style : 'lower_third',
+    })) : [],
+    music_sync: guide.music_sync || '',
+  };
+}
+
+function normalizeRetentionPrediction(pred: any): RetentionPrediction | undefined {
+  if (!pred || typeof pred !== 'object') return undefined;
+  return {
+    estimated_avg_retention: typeof pred.estimated_avg_retention === 'number'
+      ? Math.max(0, Math.min(100, pred.estimated_avg_retention)) : 50,
+    drop_points: Array.isArray(pred.drop_points) ? pred.drop_points.map((d: any) => ({
+      timecode: d.timecode || '00:00',
+      reason: d.reason || '',
+      severity: ['critical', 'moderate', 'minor'].includes(d.severity) ? d.severity : 'moderate',
+    })) : [],
+    peak_moments: Array.isArray(pred.peak_moments) ? pred.peak_moments.map((p: any) => ({
+      timecode: p.timecode || '00:00',
+      reason: p.reason || '',
+    })) : [],
+  };
+}
+
 function normalizeAnalysisResult(result: any): AnalysisResult {
   // Ensure all top-level arrays exist
   result.summary = result.summary || '';
@@ -225,6 +270,22 @@ function normalizeAnalysisResult(result: any): AnalysisResult {
     reel.hashtags = Array.isArray(reel.hashtags) ? reel.hashtags : [];
     reel.ctr_potential = typeof reel.ctr_potential === 'number' ? reel.ctr_potential : 5;
     reel.retention_strategy = reel.retention_strategy || '';
+
+    // Feature 1: Editing Guide
+    reel.editing_guide = normalizeEditingGuide(reel.editing_guide);
+
+    // Feature 3: Hook Variants
+    if (Array.isArray(reel.hook_variants)) {
+      reel.hook_variants = reel.hook_variants.map((hv: any) => ({
+        text: hv.text || '',
+        type: hv.type || 'open_loop',
+        visual_description: hv.visual_description || '',
+        audio_description: hv.audio_description || '',
+        first_3_seconds: hv.first_3_seconds || '',
+      }));
+    } else {
+      reel.hook_variants = [];
+    }
   }
 
   // Normalize thumbnail fields
@@ -233,6 +294,33 @@ function normalizeAnalysisResult(result: any): AnalysisResult {
     thumb.face_expression = thumb.face_expression || '';
     thumb.composition = thumb.composition || '';
   }
+
+  // Feature 4: Platform-aware titles
+  for (const title of result.titles) {
+    if (title.platform && !['youtube', 'tiktok', 'instagram'].includes(title.platform)) {
+      title.platform = undefined;
+    }
+    if (title.paired_thumbnail_index !== undefined && typeof title.paired_thumbnail_index !== 'number') {
+      title.paired_thumbnail_index = undefined;
+    }
+    title.paired_hook_type = title.paired_hook_type || undefined;
+  }
+
+  // Feature 2: Engagement Map
+  if (Array.isArray(result.engagement_map)) {
+    result.engagement_map = result.engagement_map.map((seg: any) => ({
+      start: seg.start || '00:00',
+      end: seg.end || '00:00',
+      level: ['peak', 'high', 'medium', 'low'].includes(seg.level) ? seg.level : 'medium',
+      emotion: seg.emotion || '',
+      note: seg.note || '',
+    }));
+  } else {
+    result.engagement_map = [];
+  }
+
+  // Feature 5: Retention Prediction
+  result.retention_prediction = normalizeRetentionPrediction(result.retention_prediction);
 
   return result as AnalysisResult;
 }

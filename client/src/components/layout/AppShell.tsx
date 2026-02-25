@@ -122,6 +122,10 @@ export function AppShell() {
                   onLoadedMetadata={videoPlayer.onLoadedMetadata}
                   onPlay={videoPlayer.onPlay}
                   onPause={videoPlayer.onPause}
+                  engagementMap={analysisHook.analysis?.engagement_map}
+                  retentionPrediction={analysisHook.analysis?.retention_prediction}
+                  duration={videoPlayer.duration}
+                  onSeek={videoPlayer.seekTo}
                 />
               )}
 

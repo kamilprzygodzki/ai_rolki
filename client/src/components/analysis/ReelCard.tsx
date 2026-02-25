@@ -1,10 +1,25 @@
 import { useState } from 'react';
-import { Clock, ChevronDown, ChevronUp, Hash, TrendingUp, Eye } from 'lucide-react';
+import { Clock, ChevronDown, ChevronUp, Hash, TrendingUp, Eye, Zap } from 'lucide-react';
 import { ReelSuggestion } from '../../types';
 import { PriorityBadge } from './PriorityBadge';
 import { EditingSuggestions } from './EditingSuggestions';
+import { EditingGuidePanel } from './EditingGuidePanel';
 import { parseTimecode } from '../../utils/formatTime';
 import { priorityColors } from '../../utils/colors';
+
+const hookTypeLabels: Record<string, string> = {
+  open_loop: 'Open Loop',
+  pattern_interrupt: 'Pattern Interrupt',
+  controversial: 'Controversial',
+  direct_value: 'Direct Value',
+};
+
+const hookTypeColors: Record<string, string> = {
+  open_loop: 'bg-violet-500/20 text-violet-400',
+  pattern_interrupt: 'bg-rose-500/20 text-rose-400',
+  controversial: 'bg-amber-500/20 text-amber-400',
+  direct_value: 'bg-emerald-500/20 text-emerald-400',
+};
 
 interface ReelCardProps {
   reel: ReelSuggestion;
@@ -14,6 +29,7 @@ interface ReelCardProps {
 
 export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [showHookVariants, setShowHookVariants] = useState(false);
   const colors = priorityColors[reel.priority];
 
   const handleTimecodeClick = (tc: string) => {
@@ -119,7 +135,56 @@ export function ReelCard({ reel, index, onSeek }: ReelCardProps) {
             </div>
           )}
 
+          {/* Feature 1: Editing Guide */}
+          {reel.editing_guide && (
+            <EditingGuidePanel guide={reel.editing_guide} onSeek={onSeek} />
+          )}
+
           <EditingSuggestions tips={reel.editing_tips} />
+
+          {/* Feature 3: Hook Variants */}
+          {reel.hook_variants && reel.hook_variants.length > 0 && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowHookVariants(!showHookVariants)}
+                className="flex items-center gap-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <Zap className="w-3 h-3" aria-hidden="true" />
+                Warianty hooka ({reel.hook_variants.length})
+                {showHookVariants ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
+              </button>
+
+              {showHookVariants && (
+                <div className="space-y-2 motion-safe:animate-fade-in">
+                  {reel.hook_variants.map((hv, i) => (
+                    <div key={i} className="bg-dark-800/50 rounded-lg p-3 space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <span className="text-amber-400 text-xs mt-0.5">{i + 1}.</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-dark-200 font-medium">"{hv.text}"</p>
+                          {hv.type && (
+                            <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded mt-1 ${hookTypeColors[hv.type] || 'bg-dark-700 text-dark-400'}`}>
+                              {hookTypeLabels[hv.type] || hv.type}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {hv.visual_description && (
+                        <p className="text-[11px] text-dark-400"><span className="text-dark-500">Wizual:</span> {hv.visual_description}</p>
+                      )}
+                      {hv.audio_description && (
+                        <p className="text-[11px] text-dark-400"><span className="text-dark-500">Audio:</span> {hv.audio_description}</p>
+                      )}
+                      {hv.first_3_seconds && (
+                        <p className="text-[11px] text-dark-400"><span className="text-dark-500">Pierwsze 3s:</span> {hv.first_3_seconds}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {reel.hashtags && reel.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
